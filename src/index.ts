@@ -1,6 +1,7 @@
 import bent from 'bent';
 import got from 'got';
 import fs from 'fs';
+import mustache from 'mustache';
 import { isFloorLandscapeDecoration, isWallLandscapeDecoration, isWallGraffitiDecoration } from './decorationsAPIHelper';
 
 const getString = bent('string');
@@ -98,27 +99,47 @@ async function runScrape(shard: string) {
     return result;
 }
 
-runScrape('shard3').then((d) => {
-    console.log(`Found ${d.length} decorations.`);
-    const uniqueDecorations = [];
-    for (let i = 0; i < d.length; i += 1) {
-        if (d.findIndex((decoration, idx) => idx > i && decoration.id === d[i].id)) {
-            uniqueDecorations.push(d[i]);
-        }
-    }
-    console.log(`${uniqueDecorations.length} are unique.`);
+function saveHTML(data: DecorationSummary[]) {
+    console.log('Generating HTML');
+    const groupedDecorations = data.reduce((rv: {
+        [type: string]: DecorationSummary[];
+    }, x) => {
+        // eslint-disable-next-line no-param-reassign
+        (rv[x.type] = rv[x.type] || []).push(x);
+        return rv;
+    }, {});
+    const html = mustache.render(fs.readFileSync('src/template.mustache', 'utf8'), groupedDecorations);
+    console.log('Saving HTML');
+    fs.writeFileSync('decorations.html', html);
+}
 
-    console.log('Saving data');
-    fs.writeFile('decorations.json', JSON.stringify(uniqueDecorations), (err) => {
-        if (err) {
-            console.log('Saving failed!');
-        } else {
-            console.log('Data saved successfully');
+if (process.argv.includes('--html')) {
+    const data = JSON.parse(fs.readFileSync('decorations.json', 'utf8')) as DecorationSummary[];
+    saveHTML(data);
+} else {
+    runScrape('shard3').then((d) => {
+        console.log(`Found ${d.length} decorations.`);
+        const uniqueDecorations = [];
+        for (let i = 0; i < d.length; i += 1) {
+            if (d.findIndex((decoration, idx) => idx > i && decoration.id === d[i].id)) {
+                uniqueDecorations.push(d[i]);
+            }
         }
+        console.log(`${uniqueDecorations.length} are unique.`);
+
+        console.log('Saving data');
+        fs.writeFile('decorations.json', JSON.stringify(uniqueDecorations), (err) => {
+            if (err) {
+                console.log('Saving failed!');
+            } else {
+                console.log('Data saved successfully');
+            }
+        });
+        saveHTML(uniqueDecorations);
+    }).catch((e) => {
+        console.log('Error:');
+        console.log(e);
     });
-}).catch((e) => {
-    console.log('Error:');
-    console.log(e);
-});
+}
 
 export { };
