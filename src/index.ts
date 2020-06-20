@@ -2,6 +2,12 @@ import bent, { RequestFunction, NodeResponse } from "bent";
 const getString = bent("string");
 import got from "got";
 
+async function sleep(ms: number) {
+    await new Promise(resolve => {
+        setTimeout(resolve, ms);
+    });
+}
+
 async function runScrape(shard: string) {
     const json = await getString(`https://www.leagueofautomatednations.com/map/${shard}/rooms.js`);
     const data: LOANRooms = JSON.parse(json);
@@ -25,6 +31,7 @@ async function runScrape(shard: string) {
             return decorations;
         }))).flat());
         currChunk += 1;
+        await sleep(1000);
     }
     return result;
 }
