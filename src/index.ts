@@ -75,7 +75,7 @@ async function runScrape(shard: string) {
     for (let i = 0; i < roomList.length; i += 30) {
         chunks.push(roomList.slice(i, i + 30));
     }
-    const result = [];
+    const result: DecorationSummary[] = [];
     let currChunk = 0;
     /* eslint-disable no-await-in-loop */
     for (const chunk of chunks) {
@@ -100,8 +100,16 @@ async function runScrape(shard: string) {
 
 runScrape('shard3').then((d) => {
     console.log(`Found ${d.length} decorations.`);
+    const uniqueDecorations = [];
+    for (let i = 0; i < d.length; i += 1) {
+        if (d.findIndex((decoration, idx) => idx > i && decoration.id === d[i].id)) {
+            uniqueDecorations.push(d[i]);
+        }
+    }
+    console.log(`${uniqueDecorations.length} are unique.`);
+
     console.log('Saving data');
-    fs.writeFile('decorations.json', JSON.stringify(d), (err) => {
+    fs.writeFile('decorations.json', JSON.stringify(uniqueDecorations), (err) => {
         if (err) {
             console.log('Saving failed!');
         } else {
