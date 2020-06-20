@@ -17,33 +17,42 @@ interface DecorationSummary {
     rarity: number;
 }
 
-async function getDecoration(room: string, shard: string): Promise<DecorationSummary[]> {
+async function getDecoration(room: string, shard: string): Promise<{
+    decorations: DecorationSummary[];
+    rateLimitHit: boolean;
+}> {
     try {
         const response = await got(`https://screeps.com/api/game/room-decorations?room=${room}&shard=${shard}`);
         const decorations: Decorations = JSON.parse(response.body);
-        return decorations.decorations.map((d) => {
-            let url: string | undefined;
-            if (isFloorLandscapeDecoration(d.decoration)) {
-                url = d.decoration.floorForegroundUrl;
-            } else if (isWallLandscapeDecoration(d.decoration)) {
-                url = d.decoration.foregroundUrl;
-            } else if (isWallGraffitiDecoration(d.decoration)) {
-                url = d.decoration.graphics[0].url;
-            }
-            return {
-                /* eslint no-underscore-dangle: ["error", { "allow": ["_id"]}] */
-                id: d.decoration._id,
-                url,
-                type: d.decoration.type,
-                rarity: d.decoration.rarity,
-            };
-        });
+        return {
+            decorations: decorations.decorations.map((d) => {
+                let url: string | undefined;
+                if (isFloorLandscapeDecoration(d.decoration)) {
+                    url = d.decoration.floorForegroundUrl;
+                } else if (isWallLandscapeDecoration(d.decoration)) {
+                    url = d.decoration.foregroundUrl;
+                } else if (isWallGraffitiDecoration(d.decoration)) {
+                    url = d.decoration.graphics[0].url;
+                }
+                return {
+                    /* eslint no-underscore-dangle: ["error", { "allow": ["_id"]}] */
+                    id: d.decoration._id,
+                    url,
+                    type: d.decoration.type,
+                    rarity: d.decoration.rarity,
+                };
+            }),
+            rateLimitHit: false,
+        };
     } catch (e) {
         if (e instanceof got.HTTPError) {
             if (e.response.statusCode === 429) {
                 console.log('Rate limit hit. Retrying in 3 seconds.');
                 return new Promise((resolve) => {
-                    setTimeout(async () => resolve(await getDecoration(room, shard)), 3000);
+                    setTimeout(async () => resolve({
+                        ...await getDecoration(room, shard),
+                        rateLimitHit: true,
+                    }), 3000);
                 });
             }
         }
@@ -62,8 +71,8 @@ async function runScrape(shard: string) {
     }
     const roomList = Object.entries(rooms);
     const chunks = [];
-    for (let i = 0; i < roomList.length; i += 50) {
-        chunks.push(roomList.slice(i, i + 50));
+    for (let i = 0; i < roomList.length; i += 30) {
+        chunks.push(roomList.slice(i, i + 30));
     }
     const result = [];
     let currChunk = 0;
@@ -74,9 +83,15 @@ async function runScrape(shard: string) {
             const decorations = await getDecoration(name, shard);
             return decorations;
         }));
-        result.push(...(scrapingResults).flat());
+        result.push(...(scrapingResults).map((r) => r.decorations).flat());
         currChunk += 1;
-        await sleep(1000);
+        // eslint-disable-next-line arrow-parens
+        if (scrapingResults.some(r => r.rateLimitHit)) {
+            console.warn('The rate limit has been hit while processing this chunk. Waiting for 10 seconds before continuing.');
+            await sleep(10000);
+        } else {
+            await sleep(1000);
+        }
     }
     /* eslint-enable no-await-in-loop */
     return result;
