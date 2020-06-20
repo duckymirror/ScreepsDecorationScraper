@@ -26,20 +26,42 @@ interface ActiveDecoration {
     room: string;
 }
 
+type DecorationType = 'floorLandscape' | 'wallGraffiti' | 'wallLandscape';
+
 interface Decoration {
     _id: string;
     graphics: unknown[];
     description: string;
     rarityMultiplier: number;
-    type: string;
+    type: DecorationType;
     theme: string;
     rarity: number;
     name: string;
     group: string;
-    foregroundUrl: string;
     steamItemDefId: number;
     createdAt: string;
     updatedAt: string;
     __v: number;
     enabled: boolean;
+}
+
+interface FloorLandscapeDecoration extends Decoration {
+    type: 'floorLandscape';
+    floorForegroundUrl: string;
+}
+
+interface WallLandscapeDecoration extends Decoration {
+    type: 'wallLandscape';
+    foregroundUrl: string;
+}
+
+interface WallGraffitiDecoration extends Decoration {
+    type: 'wallGraffiti';
+    graphics: WallGraffitiGraphics[];
+}
+
+interface WallGraffitiGraphics {
+    url: string;
+    color: string;
+    visible: string;
 }
