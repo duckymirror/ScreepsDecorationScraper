@@ -1,18 +1,61 @@
-import bent, { RequestFunction, NodeResponse } from "bent";
-const getString = bent("string");
-import got from "got";
+import bent from 'bent';
+import got from 'got';
+import { isFloorLandscapeDecoration, isWallLandscapeDecoration, isWallGraffitiDecoration } from './decorationsAPIHelper';
+
+const getString = bent('string');
 
 async function sleep(ms: number) {
-    await new Promise(resolve => {
+    await new Promise((resolve) => {
         setTimeout(resolve, ms);
     });
+}
+
+interface DecorationSummary {
+    id: string;
+    url: string | undefined;
+    type: DecorationType;
+    rarity: number;
+}
+
+async function getDecoration(room: string, shard: string): Promise<DecorationSummary[]> {
+    try {
+        const response = await got(`https://screeps.com/api/game/room-decorations?room=${room}&shard=${shard}`);
+        const decorations: Decorations = JSON.parse(response.body);
+        return decorations.decorations.map((d) => {
+            let url: string | undefined;
+            if (isFloorLandscapeDecoration(d.decoration)) {
+                url = d.decoration.floorForegroundUrl;
+            } else if (isWallLandscapeDecoration(d.decoration)) {
+                url = d.decoration.foregroundUrl;
+            } else if (isWallGraffitiDecoration(d.decoration)) {
+                url = d.decoration.graphics[0].url;
+            }
+            return {
+                /* eslint no-underscore-dangle: ["error", { "allow": ["_id"]}] */
+                id: d.decoration._id,
+                url,
+                type: d.decoration.type,
+                rarity: d.decoration.rarity,
+            };
+        });
+    } catch (e) {
+        if (e instanceof got.HTTPError) {
+            if (e.response.statusCode === 429) {
+                console.log('Rate limit hit. Retrying in 3 seconds.');
+                return new Promise((resolve) => {
+                    setTimeout(async () => resolve(await getDecoration(room, shard)), 3000);
+                });
+            }
+        }
+        throw new Error(`Unexpected error: ${e}`);
+    }
 }
 
 async function runScrape(shard: string) {
     const json = await getString(`https://www.leagueofautomatednations.com/map/${shard}/rooms.js`);
     const data: LOANRooms = JSON.parse(json);
     const rooms: LOANRooms = {};
-    for (const room in data) {
+    for (const room of Object.keys(data)) {
         if (data[room].level > 0) {
             rooms[room] = data[room];
         }
@@ -24,40 +67,26 @@ async function runScrape(shard: string) {
     }
     const result = [];
     let currChunk = 0;
+    /* eslint-disable no-await-in-loop */
     for (const chunk of chunks) {
         console.log(`Scraping chunk ${currChunk} of ${chunks.length}`);
-        result.push(...(await Promise.all(chunk.map(async ([name, room]) => {
+        const scrapingResults = await Promise.all(chunk.map(async ([name]) => {
             const decorations = await getDecoration(name, shard);
             return decorations;
-        }))).flat());
+        }));
+        result.push(...(scrapingResults).flat());
         currChunk += 1;
         await sleep(1000);
     }
+    /* eslint-enable no-await-in-loop */
     return result;
 }
 
-async function getDecoration(room: string, shard: string) {
-    try {
-        const response = await got(`https://screeps.com/api/game/room-decorations?room=${room}&shard=${shard}`);
-        const decorations: Decorations = JSON.parse(response.body);
-        return decorations.decorations.map(d => ({ id: d.decoration._id, url: d.decoration.foregroundUrl, type: d.decoration.type, rarity: d.decoration.rarity }));
-    } catch (e) {
-        if (e instanceof got.HTTPError) {
-            if (e.response.statusCode === 429) {
-                console.log("Rate limit hit. Retrying in 3 seconds.");
-                return await new Promise((resolve, reject) => {
-                    setTimeout(async () => resolve(await getDecoration(room, shard)), 3000);
-                });
-            }
-        }
-    }
-}
-
-const promise = runScrape("shard3").then(d => {
+runScrape('shard3').then((d) => {
     console.log(JSON.stringify(d));
-}).catch(e => {
-    console.log("Error:");
+}).catch((e) => {
+    console.log('Error:');
     console.log(e);
 });
 
-export { }
+export { };
