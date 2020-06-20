@@ -1,5 +1,6 @@
 import bent from 'bent';
 import got from 'got';
+import fs from 'fs';
 import { isFloorLandscapeDecoration, isWallLandscapeDecoration, isWallGraffitiDecoration } from './decorationsAPIHelper';
 
 const getString = bent('string');
@@ -98,7 +99,15 @@ async function runScrape(shard: string) {
 }
 
 runScrape('shard3').then((d) => {
-    console.log(JSON.stringify(d));
+    console.log(`Found ${d.length} decorations.`);
+    console.log('Saving data');
+    fs.writeFile('decorations.json', JSON.stringify(d), (err) => {
+        if (err) {
+            console.log('Saving failed!');
+        } else {
+            console.log('Data saved successfully');
+        }
+    });
 }).catch((e) => {
     console.log('Error:');
     console.log(e);
