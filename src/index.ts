@@ -149,7 +149,17 @@ if (process.argv.includes('--html')) {
     const data = JSON.parse(fs.readFileSync('decorations.json', 'utf8')) as DecorationSummary[];
     saveHTML(data);
 } else {
-    scrape(['shard2']).then((d) => {
+    let shards;
+    let shardArgPos = process.argv.indexOf('-s');
+    if (shardArgPos === -1) {
+        shardArgPos = process.argv.indexOf('--shards');
+    }
+    if (shardArgPos === -1 || shardArgPos + 1 >= process.argv.length || process.argv[shardArgPos + 1].startsWith('-')) {
+        shards = ['shard0', 'shard1', 'shard2', 'shard3'];
+    } else {
+        shards = process.argv[shardArgPos + 1].split(',');
+    }
+    scrape(shards).then((d) => {
         console.log(`Found ${d.length} decorations.`);
         const uniqueDecorations: DecorationDetails[] = [];
         for (let i = 0; i < d.length; i += 1) {
