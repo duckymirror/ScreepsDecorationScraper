@@ -82,6 +82,24 @@
         .deco-container:hover div {
             display: block;
         }
+
+        .hastooltip {
+            position: relative;
+        }
+
+        .hastooltip > .tooltip {
+            position: absolute;
+            bottom: 110%;
+            left: 0;
+            width: 100%;
+            background-color: #555;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .hastooltip:hover > .tooltip {
+            display: inline;
+        }
     </style>
 </head>
 
@@ -95,7 +113,7 @@
                 <img width="128" height="128" src="{{url}}">
                 <div>
                     {{#rooms}}
-                    <a href="https://screeps.com/a/#!/room/{{shard}}/{{name}}">{{shard}}/{{name}}</a>
+                    <a href="https://screeps.com/a/#!/room/{{shard}}/{{name}}" class="hastooltip"><span class="tooltip">{{owner}}</span>{{shard}}/{{name}}</a>
                     {{/rooms}}
                 </div>
             </div>
@@ -111,7 +129,7 @@
                 <img width="128" height="128" src="{{url}}">
                 <div>
                     {{#rooms}}
-                    <a href="https://screeps.com/a/#!/room/{{shard}}/{{name}}">{{shard}}/{{name}}</a>
+                    <a href="https://screeps.com/a/#!/room/{{shard}}/{{name}}" class="hastooltip"><span class="tooltip">{{owner}}</span>{{shard}}/{{name}}</a>
                     {{/rooms}}
                 </div>
             </div>
@@ -127,7 +145,7 @@
                 <img width="128" height="128" src="{{url}}">
                 <div>
                     {{#rooms}}
-                    <a href="https://screeps.com/a/#!/room/{{shard}}/{{name}}">{{shard}}/{{name}}</a>
+                    <a href="https://screeps.com/a/#!/room/{{shard}}/{{name}}" class="hastooltip"><span class="tooltip">{{owner}}</span>{{shard}}/{{name}}</a>
                     {{/rooms}}
                 </div>
             </div>

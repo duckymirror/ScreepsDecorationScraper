@@ -12,6 +12,7 @@ async function sleep(ms: number) {
 interface RoomLocation {
     shard: string;
     name: string;
+    owner: string;
 }
 
 interface DecorationSummary {
@@ -56,6 +57,7 @@ async function getDecoration(room: string, shard: string): Promise<{
                     room: {
                         name: room,
                         shard,
+                        owner: d.user,
                     },
                 };
             }),
@@ -110,6 +112,9 @@ async function scrape(shards: string[]) {
         console.log(`Processing chunk ${currChunk} of ${chunks.length} (${chunk[0].shard}/${chunk[0].name} - ${chunk[chunk.length - 1].shard}/${chunk[chunk.length - 1].name}) - Elapsed: ${formatTime(elapsedTime)}, ETA: ${formatTime((elapsedTime / currChunk) * chunks.length - elapsedTime)}`);
         const scrapingResults = await Promise.all(chunk.map(async (room) => {
             const decorations = await getDecoration(room.name, room.shard);
+            for (const decoration of decorations.decorations) {
+                decoration.room.owner = room.room.owner;
+            }
             return decorations;
         }));
         result.push(...(scrapingResults).map((r) => r.decorations).flat());
@@ -144,7 +149,7 @@ if (process.argv.includes('--html')) {
     const data = JSON.parse(fs.readFileSync('decorations.json', 'utf8')) as DecorationSummary[];
     saveHTML(data);
 } else {
-    scrape(['shard3']).then((d) => {
+    scrape(['shard2']).then((d) => {
         console.log(`Found ${d.length} decorations.`);
         const uniqueDecorations: DecorationDetails[] = [];
         for (let i = 0; i < d.length; i += 1) {
