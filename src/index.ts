@@ -1,10 +1,7 @@
-import bent from 'bent';
 import got from 'got';
 import fs from 'fs';
 import mustache from 'mustache';
 import { isFloorLandscapeDecoration, isWallLandscapeDecoration, isWallGraffitiDecoration } from './decorationsAPIHelper';
-
-const getString = bent('string');
 
 async function sleep(ms: number) {
     await new Promise((resolve) => {
@@ -71,8 +68,8 @@ async function scrape(shards: string[]) {
     let startTime = Date.now();
     const allRooms = (await Promise.all(shards.map(async (shard) => {
         console.log(`Getting rooms on ${shard}`);
-        const json = await getString(`https://www.leagueofautomatednations.com/map/${shard}/rooms.js`);
-        const data: LOANRooms = JSON.parse(json);
+        const response = await got(`https://www.leagueofautomatednations.com/map/${shard}/rooms.js`);
+        const data: LOANRooms = JSON.parse(response.body);
         return Object.entries(data).map(([name, room]) => ({
             shard,
             name,

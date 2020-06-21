@@ -22,7 +22,6 @@
   },
   "homepage": "https://github.com/duckymirror/ScreepsDecorationScraper#readme",
   "devDependencies": {
-    "@types/bent": "^7.0.2",
     "@types/mustache": "^4.0.1",
     "@types/node": "^14.0.13",
     "@typescript-eslint/eslint-plugin": "^3.3.0",
@@ -33,7 +32,6 @@
     "typescript": "^3.9.5"
   },
   "dependencies": {
-    "bent": "^7.3.6",
     "got": "^11.3.0",
     "mustache": "^4.0.1"
   }
