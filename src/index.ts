@@ -9,11 +9,21 @@ async function sleep(ms: number) {
     });
 }
 
+interface RoomLocation {
+    shard: string;
+    name: string;
+}
+
 interface DecorationSummary {
     id: string;
     url: string | undefined;
     type: DecorationType;
     rarity: number;
+    room: RoomLocation;
+}
+
+interface DecorationDetails extends DecorationSummary {
+    rooms: RoomLocation[];
 }
 
 function formatTime(ms: number): string {
@@ -43,6 +53,10 @@ async function getDecoration(room: string, shard: string): Promise<{
                     url,
                     type: d.decoration.type,
                     rarity: d.decoration.rarity,
+                    room: {
+                        name: room,
+                        shard,
+                    },
                 };
             }),
             rateLimitHit: false,
@@ -130,12 +144,22 @@ if (process.argv.includes('--html')) {
     const data = JSON.parse(fs.readFileSync('decorations.json', 'utf8')) as DecorationSummary[];
     saveHTML(data);
 } else {
-    scrape(['shard0', 'shard1', 'shard2', 'shard3']).then((d) => {
+    scrape(['shard3']).then((d) => {
         console.log(`Found ${d.length} decorations.`);
-        const uniqueDecorations = [];
+        const uniqueDecorations: DecorationDetails[] = [];
         for (let i = 0; i < d.length; i += 1) {
-            if (d.findIndex((decoration, idx) => idx > i && decoration.id === d[i].id)) {
-                uniqueDecorations.push(d[i]);
+            const existingDecoration = uniqueDecorations.find(
+                (decoration) => decoration.id === d[i].id,
+            );
+            if (!existingDecoration) {
+                uniqueDecorations.push({
+                    rooms: [d[i].room],
+                    ...d[i],
+                });
+            } else {
+                existingDecoration.rooms.push({
+                    ...d[i].room,
+                });
             }
         }
         console.log(`${uniqueDecorations.length} are unique.`);

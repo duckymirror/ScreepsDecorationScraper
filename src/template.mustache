@@ -11,6 +11,16 @@
             font-family: Arial, Helvetica, sans-serif;
         }
 
+        a {
+            color: #fff;
+            outline: none;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: solid;
+        }
+
         .collapsible {
             position: relative;
         }
@@ -38,9 +48,38 @@
 
         .collapsible>div {
             display: none;
+            flex-wrap: wrap;
+            justify-content: space-around;
         }
 
         .collapsible>input:checked~div {
+            display: flex;
+        }
+        
+        .deco-container {
+            display: inline-flex;
+            margin: 3px;
+            padding: 0;
+            position: relative;
+        }
+
+        .deco-container div {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 100%;
+            background-color: #aaa;
+        }
+
+        .deco-container div a {
+            margin: 3px auto;
+            text-align: center;
+            display: block;
+        }
+
+        .deco-container:hover div {
             display: block;
         }
     </style>
@@ -52,7 +91,14 @@
         <h1 class="collapsible-header">Floor landscape decorations</h1>
         <div>
             {{#floorLandscape}}
-            <img width="128" height="128" src="{{url}}">
+            <div class="deco-container">
+                <img width="128" height="128" src="{{url}}">
+                <div>
+                    {{#rooms}}
+                    <a href="https://screeps.com/a/#!/room/{{shard}}/{{name}}">{{shard}}/{{name}}</a>
+                    {{/rooms}}
+                </div>
+            </div>
             {{/floorLandscape}}
         </div>
     </div>
@@ -61,7 +107,14 @@
         <h1 class="collapsible-header">Wall landscape decorations</h1>
         <div>
             {{#wallLandscape}}
-            <img width="128" height="128" src="{{url}}">
+            <div class="deco-container">
+                <img width="128" height="128" src="{{url}}">
+                <div>
+                    {{#rooms}}
+                    <a href="https://screeps.com/a/#!/room/{{shard}}/{{name}}">{{shard}}/{{name}}</a>
+                    {{/rooms}}
+                </div>
+            </div>
             {{/wallLandscape}}
         </div>
     </div>
@@ -70,7 +123,14 @@
         <h1 class="collapsible-header">Wall graffitis</h1>
         <div>
             {{#wallGraffiti}}
-            <img width="128" height="128" src="{{url}}">
+            <div class="deco-container">
+                <img width="128" height="128" src="{{url}}">
+                <div>
+                    {{#rooms}}
+                    <a href="https://screeps.com/a/#!/room/{{shard}}/{{name}}">{{shard}}/{{name}}</a>
+                    {{/rooms}}
+                </div>
+            </div>
             {{/wallGraffiti}}
         </div>
     </div>
