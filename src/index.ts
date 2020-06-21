@@ -17,7 +17,7 @@ interface DecorationSummary {
 }
 
 function formatTime(ms: number): string {
-    return `${Math.floor(ms / 3600000)}:${Math.floor((ms % 3600000) / 60000)}:${Math.floor((ms % 60000) / 1000)}.${ms % 1000}`;
+    return `${Math.floor(ms / 3600000)}:${Math.floor((ms % 3600000) / 60000)}:${Math.floor((ms % 60000) / 1000)}.${Math.round(ms % 1000)}`;
 }
 
 async function getDecoration(room: string, shard: string): Promise<{
