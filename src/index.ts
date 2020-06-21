@@ -62,27 +62,36 @@ async function getDecoration(room: string, shard: string): Promise<{
     }
 }
 
-async function runScrape(shard: string) {
-    const json = await getString(`https://www.leagueofautomatednations.com/map/${shard}/rooms.js`);
-    const data: LOANRooms = JSON.parse(json);
-    const rooms: LOANRooms = {};
-    for (const room of Object.keys(data)) {
-        if (data[room].level > 0) {
-            rooms[room] = data[room];
+async function runScrape(shards: string[]) {
+    const allRooms = [];
+    for (const shard of shards) {
+        console.log(`Getting rooms on ${shard}`);
+        // eslint-disable-next-line no-await-in-loop
+        const json = await getString(`https://www.leagueofautomatednations.com/map/${shard}/rooms.js`);
+        const data: LOANRooms = JSON.parse(json);
+        allRooms.push(...Object.entries(data).map(([name, room]) => ({
+            shard,
+            name,
+            room,
+        })));
+    }
+    const rooms = [];
+    for (const room of allRooms) {
+        if (room.room.level > 0) {
+            rooms.push(room);
         }
     }
-    const roomList = Object.entries(rooms);
     const chunks = [];
-    for (let i = 0; i < roomList.length; i += 30) {
-        chunks.push(roomList.slice(i, i + 30));
+    for (let i = 0; i < rooms.length; i += 30) {
+        chunks.push(rooms.slice(i, i + 30));
     }
     const result: DecorationSummary[] = [];
     let currChunk = 0;
     /* eslint-disable no-await-in-loop */
     for (const chunk of chunks) {
-        console.log(`Scraping chunk ${currChunk} of ${chunks.length}`);
-        const scrapingResults = await Promise.all(chunk.map(async ([name]) => {
-            const decorations = await getDecoration(name, shard);
+        console.log(`Scraping chunk ${currChunk} of ${chunks.length} (${chunk[0].shard}/${chunk[0].name} - ${chunk[chunk.length - 1].shard}/${chunk[chunk.length - 1].name})`);
+        const scrapingResults = await Promise.all(chunk.map(async (room) => {
+            const decorations = await getDecoration(room.name, room.shard);
             return decorations;
         }));
         result.push(...(scrapingResults).map((r) => r.decorations).flat());
@@ -117,7 +126,7 @@ if (process.argv.includes('--html')) {
     const data = JSON.parse(fs.readFileSync('decorations.json', 'utf8')) as DecorationSummary[];
     saveHTML(data);
 } else {
-    runScrape('shard3').then((d) => {
+    runScrape(['shard0', 'shard1', 'shard2', 'shard3']).then((d) => {
         console.log(`Found ${d.length} decorations.`);
         const uniqueDecorations = [];
         for (let i = 0; i < d.length; i += 1) {
