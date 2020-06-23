@@ -20,6 +20,7 @@ interface DecorationSummary {
     url: string | undefined;
     type: DecorationType;
     rarity: number;
+    description: string;
     room: RoomLocation;
 }
 
@@ -54,6 +55,7 @@ async function getDecoration(room: string, shard: string): Promise<{
                     url,
                     type: d.decoration.type,
                     rarity: d.decoration.rarity,
+                    description: d.decoration.description,
                     room: {
                         name: room,
                         shard,
