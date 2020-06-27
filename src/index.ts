@@ -106,7 +106,7 @@ async function scrapeCreepDecorations(rooms: RoomLocation[]): Promise<Decoration
                 }[];
             },
         }) => {
-            if (!event.data.decorations) return;
+            if (!event.data.decorations || !currRoom) return;
 
             await api.socket.unsubscribe(`room:${currRoom.shard}/${currRoom.name}`);
             const decorationsInRoom = event.data.decorations.map((d) => ({
@@ -133,7 +133,7 @@ async function scrapeCreepDecorations(rooms: RoomLocation[]): Promise<Decoration
     });
 }
 
-async function scrape(shards: string[]) {
+async function scrape(shards: string[], scanCreeps?: boolean) {
     console.log('Retrieving rooms list');
     let startTime = Date.now();
     const allRooms = (await Promise.all(shards.map(async (shard) => {
@@ -153,11 +153,11 @@ async function scrape(shards: string[]) {
             rooms.push(room);
         }
     }
-    const creepPromise = scrapeCreepDecorations(rooms.map((r) => ({
+    const creepPromise = scanCreeps ? scrapeCreepDecorations(rooms.map((r) => ({
         shard: r.shard,
         name: r.name,
         owner: r.room.owner,
-    })));
+    }))) : Promise.resolve([]);
     const chunks = [];
     for (let i = 0; i < rooms.length; i += 30) {
         chunks.push(rooms.slice(i, i + 30));
@@ -221,7 +221,8 @@ if (process.argv.includes('--html')) {
     } else {
         shards = process.argv[shardArgPos + 1].split(',');
     }
-    scrape(shards).then((d) => {
+    const scanCreeps = process.argv.includes('--creeps') || process.argv.includes('-c');
+    scrape(shards, scanCreeps).then((d) => {
         console.log(`Found ${d.length} decorations.`);
         const uniqueDecorations: DecorationDetails[] = [];
         for (let i = 0; i < d.length; i += 1) {
