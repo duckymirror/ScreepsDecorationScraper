@@ -202,6 +202,10 @@ function saveHTML(data: DecorationSummary[]) {
         (rv[x.type] = rv[x.type] || []).push(x);
         return rv;
     }, {});
+    groupedDecorations.creep = groupedDecorations.creep || [];
+    groupedDecorations.creep = groupedDecorations.creep.filter(
+        (d, i) => groupedDecorations.creep.some((d2, j) => j > i && d.room.owner === d2.room.owner),
+    );
     const html = mustache.render(fs.readFileSync('src/template.mustache', 'utf8'), groupedDecorations);
     console.log('Saving HTML');
     fs.writeFileSync('decorations.html', html);
