@@ -1,6 +1,7 @@
 import got from 'got';
 import fs from 'fs';
 import mustache from 'mustache';
+import { ScreepsAPI } from 'screeps-api';
 import { isFloorLandscapeDecoration, isWallLandscapeDecoration, isWallGraffitiDecoration } from './decorationsAPIHelper';
 
 async function sleep(ms: number) {
@@ -81,6 +82,57 @@ async function getDecoration(room: string, shard: string): Promise<{
     }
 }
 
+async function scrapeCreepDecorations(rooms: RoomLocation[]): Promise<DecorationSummary[]> {
+    let api: any;
+    try {
+        api = await ScreepsAPI.fromConfig();
+    } catch (e) {
+        console.log('Couldn\'t init ScreepsAPI. Error:');
+        console.log(e);
+        return [];
+    }
+
+    console.log('Connecting');
+    await api.socket.connect();
+
+    return new Promise((resolve) => {
+        let i = 0;
+        let currRoom = rooms[0];
+        const decorations: DecorationSummary[] = [];
+        const onMessage = async (event: {
+            data: {
+                decorations?: {
+                    decoration: CreepDecoration
+                }[];
+            },
+        }) => {
+            if (!event.data.decorations) return;
+
+            await api.socket.unsubscribe(`room:${currRoom.shard}/${currRoom.name}`);
+            const decorationsInRoom = event.data.decorations.map((d) => ({
+                id: d.decoration._id,
+                url: d.decoration.url,
+                type: d.decoration.type,
+                rarity: d.decoration.rarity,
+                description: d.decoration.description,
+                room: { ...currRoom },
+            }));
+            decorations.push(...decorationsInRoom);
+            console.log(decorationsInRoom);
+            i += 1;
+            if (i === rooms.length) {
+                api.socket.disconnect();
+                resolve(decorations);
+                return;
+            }
+            currRoom = rooms[i];
+            await api.socket.subscribe(`room:${currRoom.shard}/${currRoom.name}`, onMessage);
+        };
+        console.log('First subscription');
+        api.socket.subscribe(`room:${currRoom.shard}/${currRoom.name}`, onMessage);
+    });
+}
+
 async function scrape(shards: string[]) {
     console.log('Retrieving rooms list');
     let startTime = Date.now();
@@ -101,6 +153,11 @@ async function scrape(shards: string[]) {
             rooms.push(room);
         }
     }
+    const creepPromise = scrapeCreepDecorations(rooms.map((r) => ({
+        shard: r.shard,
+        name: r.name,
+        owner: r.room.owner,
+    })));
     const chunks = [];
     for (let i = 0; i < rooms.length; i += 30) {
         chunks.push(rooms.slice(i, i + 30));
@@ -128,6 +185,9 @@ async function scrape(shards: string[]) {
             await sleep(1000);
         }
     }
+    const creepDecorations = await creepPromise;
+    console.log(creepDecorations);
+    result.push(...creepDecorations);
     /* eslint-enable no-await-in-loop */
     console.log(`Finished scraping. Took ${formatTime(Date.now() - startTime)}`);
     return result;

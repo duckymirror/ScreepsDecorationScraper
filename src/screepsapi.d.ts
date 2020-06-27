@@ -26,7 +26,7 @@ interface ActiveDecoration {
     room: string;
 }
 
-type DecorationType = 'floorLandscape' | 'wallGraffiti' | 'wallLandscape';
+type DecorationType = 'floorLandscape' | 'wallGraffiti' | 'wallLandscape' | 'creep';
 
 interface Decoration {
     _id: string;
@@ -64,4 +64,9 @@ interface WallGraffitiGraphics {
     url: string;
     color: string;
     visible: string;
+}
+
+interface CreepDecoration extends Decoration {
+    type: 'creep';
+    url: string;
 }

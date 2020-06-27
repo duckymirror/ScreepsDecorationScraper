@@ -33,6 +33,7 @@
   },
   "dependencies": {
     "got": "^11.3.0",
-    "mustache": "^4.0.1"
+    "mustache": "^4.0.1",
+    "screeps-api": "^1.12.1"
   }
 }

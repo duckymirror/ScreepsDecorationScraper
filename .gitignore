@@ -104,3 +104,4 @@ dist
 .tern-port
 decorations.json
 decorations.html
+.screeps.yml
