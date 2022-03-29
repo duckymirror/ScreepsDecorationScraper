@@ -34,6 +34,6 @@
   "dependencies": {
     "got": "^11.8.2",
     "mustache": "^4.1.0",
-    "screeps-api": "^1.14.0"
+    "screeps-api": "^1.16.0"
   }
 }
